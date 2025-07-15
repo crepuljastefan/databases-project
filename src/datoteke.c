@@ -203,3 +203,58 @@ PregledSlog* pronadji_slog_pregled(const char* filename, int key)
     fclose(fp);
     return NULL;
 }
+void prikazi_alergije(int broj_kartona, int* adresa_bloka, int* broj_sloga)
+{
+    FILE* fp = fopen("pacijenti.dat", "rb");
+    if (fp == NULL) {
+        printf("Greska pri otvaranju datoteke pacijenti.dat.\n");
+        *adresa_bloka = -1;
+        *broj_sloga = -1;
+        return;
+    }
+    PacijentSlog blok[f1];
+    int trenutni_blok = 0;
+    while (fread(blok, sizeof(PacijentSlog), f1, fp) == f1) {
+        for (int i = 0; i < f1; i++) {
+            if (blok[i].pacijent.broj_kartona == broj_kartona) {
+                printf("Pacijent: %s %s\n", blok[i].pacijent.ime, blok[i].pacijent.prezime);
+                printf("Broj kartona: %d\n", blok[i].pacijent.broj_kartona);
+                printf("Alergija na polen: %s\n", blok[i].pacijent.alerg_polen);
+                printf("Adresa bloka: %d\n", trenutni_blok);
+                *adresa_bloka = trenutni_blok;
+                *broj_sloga = i;
+                fclose(fp);
+                return;
+            }
+        }
+        trenutni_blok++;
+    }
+    printf("Pacijent sa ovim brojem kartona nije pronadjen..\n");
+    fclose(fp);
+}
+void prikaz_pritiska(int broj_kartona, int* adresa_bloka, int* broj_sloga)
+{
+
+    FILE* fp = fopen("pacijenti.dat", "rb");
+    if (fp == NULL) {
+        printf("Greska pri otvaranju datoteke pacijenti.dat.\n");
+        *adresa_bloka = -1;
+        *broj_sloga = -1;
+        return;
+    }
+    PacijentSlog blok[f1];
+    int trenutni_blok = 0;
+    while (fread(blok, sizeof(PacijentSlog), f1, fp) == f1) {
+        for (int i = 0; i < f1; i++) {
+            if (blok[i].pacijent.broj_kartona == broj_kartona) {
+                *adresa_bloka = trenutni_blok;
+                *broj_sloga = i;
+                fclose(fp);
+                return;
+            }
+        }
+        trenutni_blok++;
+    }
+    printf("Pacijent sa ovim brojem kartona nije pronadjen..\n");
+    fclose(fp);
+}
