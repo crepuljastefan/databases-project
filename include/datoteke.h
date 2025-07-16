@@ -9,6 +9,7 @@ void upisi_slog_datoteke_pacijenti(char filename[], int* status, PacijentSlog* p
 void upisi_slog_datoteke_pregledi(char filename[], int* status, PregledSlog* pregled_slog, int faktor_blokiranja);
 PacijentSlog* pronadji_slog_pacijent(const char* filename, int key);
 PregledSlog* pronadji_slog_pregled(const char* filename, int key);
-void prikaz_pritiska(int* adresa_bloka, int* broj_sloga);
-void prikazi_alergije(int broj_kartona, int* adresa_bloka, int* broj_sloga);
+void prikaz_pritiska();
+void prikazi_alergije(int broj_kartona);
+void modifikuj_pacijenta(int broj_kartona, char ime[], char prezime[], char JMBG[], char datum_rodjenja[], float tezina, float visina, char alerg_polen[]);
 #endif // DATOTEKE_H

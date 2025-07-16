@@ -2,12 +2,11 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#define KRAJ_DATOTEKE -1
 #define f1 4
 #define f2 6
-#define KRAJ_DATOTEKE -1
 void formiraj_datoteku_pacijent(char filename[], int faktor_blokiranja, int* status)
 {
-    faktor_blokiranja *= 3;
     FILE* fp = fopen(filename, "wb");
     if (fp == NULL) {
         *status = 2;
@@ -58,46 +57,52 @@ void upisi_slog_datoteke_pacijenti(char filename[], int* status, PacijentSlog* p
     if (fp == NULL) {
         printf("Greska pri otvaranju datoteke %s.\n", filename);
         *status = 2;
-    } else {
-        PacijentSlog* temp_slog = pronadji_slog_pacijent(filename, pacijent_slog->key);
-        if (temp_slog != NULL) {
-            *status = 2;
-        } else {
-            PacijentSlog blok[f1];
-            fseek(fp, sizeof(PacijentSlog) * -faktor_blokiranja, SEEK_END);
-            fread(blok, sizeof(PacijentSlog), faktor_blokiranja, fp);
-            int i = 0;
-            while (i < faktor_blokiranja) {
-                if (blok[i].key == KRAJ_DATOTEKE) {
-                    blok[i] = *pacijent_slog;
-                    if (i + 1 < faktor_blokiranja) {
-                        blok[i + 1].key = KRAJ_DATOTEKE;
-                    }
-                    i++;
-                    break;
-                }
-                i++;
-            }
-            if (i < faktor_blokiranja) {
-                blok[i].key = KRAJ_DATOTEKE;
-                fseek(fp, sizeof(PacijentSlog) * -faktor_blokiranja, SEEK_END);
-                fwrite(blok, sizeof(PacijentSlog), faktor_blokiranja, fp);
-                printf("Slog je uspešno upisan.\n");
-            } else {
-                fseek(fp, sizeof(PacijentSlog) * -faktor_blokiranja, SEEK_END);
-                fwrite(blok, sizeof(PacijentSlog), faktor_blokiranja, fp);
-                PacijentSlog novi_blok[faktor_blokiranja];
-                Pacijent prazan_pacijent = { 0 };
-                for (int i = 0; i < faktor_blokiranja; i++) {
-                    novi_blok[i].obrisan = -1;
-                    novi_blok[i].pacijent = prazan_pacijent;
-                }
-                novi_blok[0].key = KRAJ_DATOTEKE;
-                fwrite(novi_blok, sizeof(PacijentSlog), faktor_blokiranja, fp);
-                printf("Slog je uspešno upisan, ali je došlo do prepunjenja bloka. Novi blok je formiran.\n");
-            }
-        }
+        return;
     }
+    PacijentSlog* temp_slog = pronadji_slog_pacijent(filename, pacijent_slog->key);
+    if (temp_slog != NULL) {
+        *status = 2;
+        free(temp_slog);
+        fclose(fp);
+        return;
+    }
+    PacijentSlog blok[faktor_blokiranja];
+    fseek(fp, sizeof(PacijentSlog) * -faktor_blokiranja, SEEK_END);
+    fread(blok, sizeof(PacijentSlog), faktor_blokiranja, fp);
+    int i = 0;
+    while (i < faktor_blokiranja) {
+        if (blok[i].key == KRAJ_DATOTEKE) {
+            blok[i] = *pacijent_slog;
+            pacijent_slog->key = pacijent_slog->pacijent.broj_kartona;
+            pacijent_slog->obrisan = 0;
+            i++;
+            break;
+        }
+        i++;
+    }
+
+    if (i < faktor_blokiranja) {
+        blok[i].key = KRAJ_DATOTEKE;
+        fseek(fp, sizeof(PacijentSlog) * -faktor_blokiranja, SEEK_CUR);
+        fwrite(blok, sizeof(PacijentSlog), faktor_blokiranja, fp);
+    } else {
+        fseek(fp, sizeof(PacijentSlog) * -faktor_blokiranja, SEEK_CUR);
+        fwrite(blok, sizeof(PacijentSlog), faktor_blokiranja, fp);
+        PacijentSlog novi_blok[faktor_blokiranja];
+        Pacijent prazan_pacijent = { 0 };
+        for (int i = 0; i < faktor_blokiranja; i++) {
+            novi_blok[i].pacijent = prazan_pacijent;
+            novi_blok[i].obrisan = KRAJ_DATOTEKE;
+            novi_blok[i].key = 0;
+        }
+        novi_blok[0].key = pacijent_slog->pacijent.broj_kartona;
+        novi_blok[0] = *pacijent_slog;
+        novi_blok[0].obrisan = 0;
+        novi_blok[1].key = KRAJ_DATOTEKE;
+        fwrite(novi_blok, sizeof(PregledSlog), faktor_blokiranja, fp);
+    }
+    *status = 0;
+    fclose(fp);
 }
 PacijentSlog* pronadji_slog_pacijent(const char* filename, int key)
 {
@@ -106,7 +111,7 @@ PacijentSlog* pronadji_slog_pacijent(const char* filename, int key)
         printf("Greška u otvaranju!");
         return NULL;
     }
-    rewind(fp);
+    fseek(fp, 0, SEEK_SET);
     PacijentSlog blok[f1];
     int trenutni_blok = 0;
     while (fread(blok, sizeof(PacijentSlog), f1, fp) == f1) {
@@ -135,44 +140,51 @@ void upisi_slog_datoteke_pregledi(char filename[], int* status, PregledSlog* pre
     if (fp == NULL) {
         printf("Greska pri otvaranju datoteke %s.\n", filename);
         *status = 2;
-    } else {
-        PregledSlog* temp_slog = pronadji_slog_pregled(filename, pregled_slog->key);
-        if (temp_slog != NULL) {
-            *status = 2;
-        } else {
-            PregledSlog blok[f1];
-            fseek(fp, sizeof(PregledSlog) * -faktor_blokiranja, SEEK_END);
-            fread(blok, sizeof(PregledSlog), faktor_blokiranja, fp);
-            int i = 0;
-            while (i < faktor_blokiranja) {
-                if (blok[i].key == KRAJ_DATOTEKE) {
-                    blok[i] = *pregled_slog;
-                    if (i + 1 < faktor_blokiranja) {
-                        blok[i + 1].key = KRAJ_DATOTEKE;
-                    }
-                    i++;
-                    break;
-                }
-                i++;
-            }
-            if (i < faktor_blokiranja) {
-                blok[i].key = KRAJ_DATOTEKE;
-                fseek(fp, sizeof(PregledSlog) * -faktor_blokiranja, SEEK_END);
-                fwrite(blok, sizeof(PregledSlog), faktor_blokiranja, fp);
-            } else {
-                fseek(fp, sizeof(PregledSlog) * -faktor_blokiranja, SEEK_END);
-                fwrite(blok, sizeof(PregledSlog), faktor_blokiranja, fp);
-                PregledSlog novi_blok[faktor_blokiranja];
-                Pregled prazan_pregled = { 0 };
-                for (int i = 0; i < faktor_blokiranja; i++) {
-                    novi_blok[i].obrisan = -1;
-                    novi_blok[i].pregled = prazan_pregled;
-                }
-                novi_blok[0].key = KRAJ_DATOTEKE;
-                fwrite(novi_blok, sizeof(PregledSlog), faktor_blokiranja, fp);
-            }
-        }
+        return;
     }
+    PregledSlog* temp_slog = pronadji_slog_pregled(filename, pregled_slog->pregled.id);
+    if (temp_slog != NULL) {
+        *status = 2;
+        free(temp_slog);
+        fclose(fp);
+        return;
+    }
+    PregledSlog blok[faktor_blokiranja];
+    fseek(fp, sizeof(PregledSlog) * -faktor_blokiranja, SEEK_END);
+    fread(blok, sizeof(PregledSlog), faktor_blokiranja, fp);
+    int i = 0;
+    while (i < faktor_blokiranja) {
+        if (blok[i].key == KRAJ_DATOTEKE) {
+            blok[i] = *pregled_slog;
+            pregled_slog->key = pregled_slog->pregled.id;
+            pregled_slog->obrisan = 0;
+            i++;
+            break;
+        }
+        i++;
+    }
+    if (i < faktor_blokiranja) {
+        blok[i].key = KRAJ_DATOTEKE;
+        fseek(fp, sizeof(PregledSlog) * -faktor_blokiranja, SEEK_CUR);
+        fwrite(blok, sizeof(PregledSlog), faktor_blokiranja, fp);
+    } else {
+        fseek(fp, sizeof(PregledSlog) * -faktor_blokiranja, SEEK_CUR);
+        fwrite(blok, sizeof(PregledSlog), faktor_blokiranja, fp);
+        PregledSlog novi_blok[faktor_blokiranja];
+        Pregled prazan_pregled = { 0 };
+        for (int i = 0; i < faktor_blokiranja; i++) {
+            novi_blok[i].pregled = prazan_pregled;
+            novi_blok[i].obrisan = KRAJ_DATOTEKE;
+            novi_blok[i].key = 0;
+        }
+        novi_blok[0].key = pregled_slog->pregled.id;
+        novi_blok[0] = *pregled_slog;
+        novi_blok[0].obrisan = 0;
+        novi_blok[1].key = KRAJ_DATOTEKE;
+        fwrite(novi_blok, sizeof(PregledSlog), faktor_blokiranja, fp);
+    }
+    *status = 0;
+    fclose(fp);
 }
 PregledSlog* pronadji_slog_pregled(const char* filename, int key)
 {
@@ -181,11 +193,11 @@ PregledSlog* pronadji_slog_pregled(const char* filename, int key)
         printf("Greška u otvaranju!");
         return NULL;
     }
-    rewind(fp);
-    PregledSlog blok[f1];
+    fseek(fp, 0, SEEK_SET);
+    PregledSlog blok[f2];
     int trenutni_blok = 0;
-    while (fread(blok, sizeof(PregledSlog), f1, fp) == f1) {
-        for (int i = 0; i < f1; i++) {
+    while (fread(blok, sizeof(PregledSlog), f2, fp) == f2) {
+        for (int i = 0; i < f2; i++) {
             if (blok[i].key == key && blok[i].obrisan == 0) {
                 PregledSlog* pronadjen = malloc(sizeof(PregledSlog));
                 if (pronadjen != NULL) {
@@ -204,37 +216,15 @@ PregledSlog* pronadji_slog_pregled(const char* filename, int key)
     fclose(fp);
     return NULL;
 }
-Pacijent pronadji_pacijenta(int broj_kartona)
+void prikazi_alergije(int broj_kartona)
 {
     FILE* fp = fopen("pacijenti.dat", "rb");
     if (fp == NULL) {
         printf("Greska pri otvaranju datoteke pacijenti.dat.\n");
-        return (Pacijent) { 0 };
-    }
-    PacijentSlog blok[f1];
-    while (fread(blok, sizeof(PacijentSlog), f1, fp) == f1) {
-        for (int i = 0; i < f1; i++) {
-            if (blok[i].pacijent.broj_kartona == broj_kartona) {
-                printf("Pacijent: %s %s\n", blok[i].pacijent.ime, blok[i].pacijent.prezime);
-                printf("Broj kartona: %d\n", blok[i].pacijent.broj_kartona);
-                fclose(fp);
-                return blok[i].pacijent;
-            }
-        }
-    }
-    printf("Pacijent sa ovim brojem kartona nije pronadjen..\n");
-    return (Pacijent) { 0 };
-    fclose(fp);
-}
-void prikazi_alergije(int broj_kartona, int* adresa_bloka, int* broj_sloga)
-{
-    FILE* fp = fopen("pacijenti.dat", "rb");
-    if (fp == NULL) {
-        printf("Greska pri otvaranju datoteke pacijenti.dat.\n");
-        *adresa_bloka = -1;
-        *broj_sloga = -1;
         return;
     }
+
+    fseek(fp, 0, SEEK_SET);
     PacijentSlog blok[f1];
     int trenutni_blok = 0;
     while (fread(blok, sizeof(PacijentSlog), f1, fp) == f1) {
@@ -245,19 +235,18 @@ void prikazi_alergije(int broj_kartona, int* adresa_bloka, int* broj_sloga)
             if (blok[i].obrisan == 1) {
                 continue; // Preskoci obrisane slogove
             }
-            if (blok[i].pacijent.broj_kartona == broj_kartona) {
+            if (blok[i].key == broj_kartona) {
                 Pacijent pacijent = blok[i].pacijent;
                 ispisi_pacijenta(pacijent);
                 printf("Adresa bloka: %d\n", trenutni_blok);
-                *adresa_bloka = trenutni_blok;
-                *broj_sloga = i;
+                printf("Broj sloga: %d\n", i);
                 fclose(fp);
                 return;
             }
         }
         trenutni_blok++;
     }
-    printf("Pacijent sa ovim brojem kartona nije pronadjen..\n");
+    printf("Pacijent sa ovim brojem kartona nije pronadjen....\n");
     fclose(fp);
 }
 void ispisi_pacijenta(Pacijent pacijent)
@@ -271,31 +260,36 @@ void ispisi_pacijenta(Pacijent pacijent)
     printf("Tezina: %.2f kg\n", pacijent.tezina);
     printf("Alergija na polen: %s\n", pacijent.alerg_polen);
 }
-void prikaz_pritiska(int* adresa_bloka, int* broj_sloga)
+void prikaz_pritiska()
 {
     FILE* fp = fopen("pregledi.dat", "rb");
     if (fp == NULL) {
         printf("Greska pri otvaranju datoteke pacijenti.dat.\n");
-        *adresa_bloka = -1;
-        *broj_sloga = -1;
         return;
     }
-    PregledSlog blok[f1];
-    Pacijent pacijent;
+
+    fseek(fp, 0, SEEK_SET);
+    PregledSlog blok[f2];
+    PacijentSlog* pacijentSlog;
     int trenutni_blok = 0;
-    while (fread(blok, sizeof(PregledSlog), f1, fp) == f1) {
-        for (int i = 0; i < f1; i++) {
+    while (fread(blok, sizeof(PregledSlog), f2, fp) == f2) {
+        for (int i = 0; i < f2; i++) {
+
+            pacijentSlog = pronadji_slog_pacijent("pacijenti.dat", blok[i].key);
             if (blok[i].key == KRAJ_DATOTEKE) {
                 break;
             }
-            if (blok[i].obrisan == 1) {
+            if (blok[i].obrisan != 0) {
                 continue; // Preskoci obrisane slogove
             }
-            if (blok[i].pregled.dijastolni_pritisak == blok[i].pregled.sistolni_pritisak) {
-                pacijent = pronadji_pacijenta(blok[i].pregled.broj_kartona);
-                ispisi_pacijenta(pacijent);
-                *adresa_bloka = trenutni_blok;
-                *broj_sloga = i;
+
+            if (blok[i].pregled.dijastolni_pritisak == blok[i].pregled.sistolni_pritisak && blok[i].pregled.sistolni_pritisak > 0) {
+                pacijentSlog = pronadji_slog_pacijent("pacijenti.dat", blok[i].key);
+                ispisi_pacijenta(pacijentSlog->pacijent);
+                printf("Sistolni pritisak: %d\n", blok[i].pregled.sistolni_pritisak);
+                printf("Adresa bloka: %d\n", trenutni_blok);
+                printf("Broj sloga: %d\n", i);
+                free(pacijentSlog);
             }
         }
         trenutni_blok++;
@@ -331,10 +325,13 @@ void modifikuj_pacijenta(int broj_kartona, char ime[], char prezime[], char JMBG
                 fseek(fp, sizeof(PacijentSlog) * -f1, SEEK_CUR);
                 fwrite(blok, sizeof(PacijentSlog), f1, fp);
                 printf("Podaci pacijenta su uspešno modifikovani.\n");
-                fclose(fp);
                 free(pacijent_slog);
+                fclose(fp);
                 return;
             }
         }
     }
+    printf("Nije moguće pronaći slog u datoteci.\n");
+    free(pacijent_slog);
+    fclose(fp);
 }
