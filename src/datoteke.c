@@ -1,5 +1,4 @@
 #include "../include/datoteke.h"
-#include <cerrno>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -303,4 +302,39 @@ void prikaz_pritiska(int* adresa_bloka, int* broj_sloga)
     }
 
     fclose(fp);
+}
+void modifikuj_pacijenta(int broj_kartona, char ime[], char prezime[], char JMBG[], char datum_rodjenja[], float tezina, float visina, char alerg_polen[])
+{
+    PacijentSlog* pacijent_slog = pronadji_slog_pacijent("pacijenti.dat", broj_kartona);
+    if (pacijent_slog == NULL) {
+        printf("Pacijent sa brojem kartona %d nije pronadjen.\n", broj_kartona);
+        return;
+    }
+    strcpy(pacijent_slog->pacijent.ime, ime);
+    strcpy(pacijent_slog->pacijent.prezime, prezime);
+    strcpy(pacijent_slog->pacijent.JMBG, JMBG);
+    strcpy(pacijent_slog->pacijent.datum_rodjenja, datum_rodjenja);
+    pacijent_slog->pacijent.tezina = tezina;
+    pacijent_slog->pacijent.visina = visina;
+    strcpy(pacijent_slog->pacijent.alerg_polen, alerg_polen);
+    FILE* fp = fopen("pacijenti.dat", "rb+");
+    if (fp == NULL) {
+        printf("Greska pri otvaranju datoteke pacijenti.dat.\n");
+        free(pacijent_slog);
+        return;
+    }
+    PacijentSlog blok[f1];
+    while (fread(blok, sizeof(PacijentSlog), f1, fp) == f1) {
+        for (int i = 0; i < f1; i++) {
+            if (blok[i].key == pacijent_slog->key && blok[i].obrisan == 0) {
+                blok[i] = *pacijent_slog;
+                fseek(fp, sizeof(PacijentSlog) * -f1, SEEK_CUR);
+                fwrite(blok, sizeof(PacijentSlog), f1, fp);
+                printf("Podaci pacijenta su uspešno modifikovani.\n");
+                fclose(fp);
+                free(pacijent_slog);
+                return;
+            }
+        }
+    }
 }
