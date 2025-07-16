@@ -4,6 +4,7 @@ typedef struct {
     int broj_kartona;
     char ime[31];
     char prezime[31];
+    char datum_rodjenja[11]; // Format: DD.MM.GGGG
     char JMBG[14];
     float tezina;
     float visina;
