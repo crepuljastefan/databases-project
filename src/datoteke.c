@@ -1,6 +1,8 @@
 #include "../include/datoteke.h"
+#include <cerrno>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #define f1 4
 #define f2 6
 #define KRAJ_DATOTEKE -1
@@ -203,6 +205,28 @@ PregledSlog* pronadji_slog_pregled(const char* filename, int key)
     fclose(fp);
     return NULL;
 }
+Pacijent pronadji_pacijenta(int broj_kartona)
+{
+    FILE* fp = fopen("pacijenti.dat", "rb");
+    if (fp == NULL) {
+        printf("Greska pri otvaranju datoteke pacijenti.dat.\n");
+        return (Pacijent) { 0 };
+    }
+    PacijentSlog blok[f1];
+    while (fread(blok, sizeof(PacijentSlog), f1, fp) == f1) {
+        for (int i = 0; i < f1; i++) {
+            if (blok[i].pacijent.broj_kartona == broj_kartona) {
+                printf("Pacijent: %s %s\n", blok[i].pacijent.ime, blok[i].pacijent.prezime);
+                printf("Broj kartona: %d\n", blok[i].pacijent.broj_kartona);
+                fclose(fp);
+                return blok[i].pacijent;
+            }
+        }
+    }
+    printf("Pacijent sa ovim brojem kartona nije pronadjen..\n");
+    return (Pacijent) { 0 };
+    fclose(fp);
+}
 void prikazi_alergije(int broj_kartona, int* adresa_bloka, int* broj_sloga)
 {
     FILE* fp = fopen("pacijenti.dat", "rb");
@@ -216,10 +240,15 @@ void prikazi_alergije(int broj_kartona, int* adresa_bloka, int* broj_sloga)
     int trenutni_blok = 0;
     while (fread(blok, sizeof(PacijentSlog), f1, fp) == f1) {
         for (int i = 0; i < f1; i++) {
+            if (blok[i].key == KRAJ_DATOTEKE) {
+                break;
+            }
+            if (blok[i].obrisan == 1) {
+                continue; // Preskoci obrisane slogove
+            }
             if (blok[i].pacijent.broj_kartona == broj_kartona) {
-                printf("Pacijent: %s %s\n", blok[i].pacijent.ime, blok[i].pacijent.prezime);
-                printf("Broj kartona: %d\n", blok[i].pacijent.broj_kartona);
-                printf("Alergija na polen: %s\n", blok[i].pacijent.alerg_polen);
+                Pacijent pacijent = blok[i].pacijent;
+                ispisi_pacijenta(pacijent);
                 printf("Adresa bloka: %d\n", trenutni_blok);
                 *adresa_bloka = trenutni_blok;
                 *broj_sloga = i;
@@ -232,29 +261,46 @@ void prikazi_alergije(int broj_kartona, int* adresa_bloka, int* broj_sloga)
     printf("Pacijent sa ovim brojem kartona nije pronadjen..\n");
     fclose(fp);
 }
-void prikaz_pritiska(int broj_kartona, int* adresa_bloka, int* broj_sloga)
+void ispisi_pacijenta(Pacijent pacijent)
 {
-
-    FILE* fp = fopen("pacijenti.dat", "rb");
+    printf("Ime: %s\n", pacijent.ime);
+    printf("Prezime: %s\n", pacijent.prezime);
+    printf("Datum rodjenja: %s\n", pacijent.datum_rodjenja);
+    printf("Broj kartona: %d\n", pacijent.broj_kartona);
+    printf("JMBG: %s\n", pacijent.JMBG);
+    printf("Visina: %.2f cm\n", pacijent.visina);
+    printf("Tezina: %.2f kg\n", pacijent.tezina);
+    printf("Alergija na polen: %s\n", pacijent.alerg_polen);
+}
+void prikaz_pritiska(int* adresa_bloka, int* broj_sloga)
+{
+    FILE* fp = fopen("pregledi.dat", "rb");
     if (fp == NULL) {
         printf("Greska pri otvaranju datoteke pacijenti.dat.\n");
         *adresa_bloka = -1;
         *broj_sloga = -1;
         return;
     }
-    PacijentSlog blok[f1];
+    PregledSlog blok[f1];
+    Pacijent pacijent;
     int trenutni_blok = 0;
-    while (fread(blok, sizeof(PacijentSlog), f1, fp) == f1) {
+    while (fread(blok, sizeof(PregledSlog), f1, fp) == f1) {
         for (int i = 0; i < f1; i++) {
-            if (blok[i].pacijent.broj_kartona == broj_kartona) {
+            if (blok[i].key == KRAJ_DATOTEKE) {
+                break;
+            }
+            if (blok[i].obrisan == 1) {
+                continue; // Preskoci obrisane slogove
+            }
+            if (blok[i].pregled.dijastolni_pritisak == blok[i].pregled.sistolni_pritisak) {
+                pacijent = pronadji_pacijenta(blok[i].pregled.broj_kartona);
+                ispisi_pacijenta(pacijent);
                 *adresa_bloka = trenutni_blok;
                 *broj_sloga = i;
-                fclose(fp);
-                return;
             }
         }
         trenutni_blok++;
     }
-    printf("Pacijent sa ovim brojem kartona nije pronadjen..\n");
+
     fclose(fp);
 }
