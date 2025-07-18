@@ -1,5 +1,6 @@
 #ifndef DATOTEKE_H
 #define DATOTEKE_H
+#include "log.h"
 #include "pacijent_slog.h"
 #include "pregled_slog.h"
 void ispisi_pacijenta(Pacijent pacijent);
@@ -12,4 +13,7 @@ PregledSlog* pronadji_slog_pregled(const char* filename, int key);
 void prikaz_pritiska();
 void prikazi_alergije(int broj_kartona);
 void modifikuj_pacijenta(int broj_kartona, char ime[], char prezime[], char JMBG[], char datum_rodjenja[], float tezina, float visina, char alerg_polen[]);
+LogSlog* pronadji_slog_log(const char* filename, int key);
+void upisi_slog_datoteke_evidencije(char filename[], int* status, LogSlog* log_slog, int faktor_blokiranja);
+void ispisi_datoteku_evidencija(const char filename[], int* status);
 #endif // DATOTEKE_H

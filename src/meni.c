@@ -16,6 +16,8 @@ void prikazi_meni()
     printf("6. Prikazi pacijente sa jednakim pritiskom\n");
     printf("7. Modifikuj podatke o pacijentu\n");
     printf("8. Rad sa rasutim datotekama\n");
+    printf("9. Prikaži izveštaj datoteka sa evidencijama\n");
+    printf("10. Prikaži prosečan broj pristupa po operaciji\n");
     printf("0. Izlaz iz programa\n");
 }
 void meni()
@@ -123,6 +125,16 @@ void meni()
             break;
         case 8:
             meni_rasute();
+            break;
+        case 9:
+            ispisi_datoteku_evidencija("log.dat", &status);
+            break;
+        case 10:
+            printf("Unesite prag za prosecan broj pristupa po operaciji: ");
+            int prag;
+            scanf("%d", &prag);
+            printf("Prosecni broj pristupa po operaciji:\n");
+            prikazi_izvestaj_evidencija("log.dat", prag);
             break;
         case 0:
             printf("Izlaz iz programa.\n");

@@ -1,5 +1,6 @@
 #include "../include/rasute_datoteke.h"
 #include "../include/datoteke.h"
+#include "../include/log.h"
 #include "../include/pacijent_pregled_slog.h"
 #include "../include/pacijent_slog.h"
 #include "../include/pregled_slog.h"
@@ -153,9 +154,9 @@ void ucitaj_pacijente(FILE* pacijenti_fp, PacijentSlog* pacijentBlok, PomocniPac
         }
     }
 }
-int nadji_slobodan_index(FILE* fp, int broj_kartona)
+int nadji_slobodan_index(FILE* fp, int* counter, int broj_kartona)
 {
-
+    int trazenje_counter = 0;
     int bucket_index = broj_kartona % B;
     int init_idx = bucket_index;
     PacijentPregledSlog slog;
@@ -165,7 +166,10 @@ int nadji_slobodan_index(FILE* fp, int broj_kartona)
             long offset = index * sizeof(PacijentPregledSlog);
             fseek(fp, offset, SEEK_SET);
             fread(&slog, sizeof(PacijentPregledSlog), 1, fp);
+            trazenje_counter++;
+            (*counter)++;
             if (slog.key == KRAJ_DATOTEKE || slog.obrisan != NIJE_OBRISAN) {
+                evidentiraj_pristup_datoteci("log.dat", "trazenje", broj_kartona, trazenje_counter);
                 return index;
             }
         }
@@ -174,16 +178,18 @@ int nadji_slobodan_index(FILE* fp, int broj_kartona)
             break;
         }
     }
+
+    evidentiraj_pristup_datoteci("log.dat", "trazenje", broj_kartona, trazenje_counter);
     return -1;
 }
-void upisi_slog_rasuta(PacijentPregledSlog* slog, const char* filename, int* status)
+void upisi_slog_rasuta(PacijentPregledSlog* slog, int* counter, const char* filename, int* status)
 {
     FILE* fp = fopen(filename, "rb+");
     if (fp == NULL) {
         *status = 2;
         return;
     }
-    int index = nadji_slobodan_index(fp, slog->pacijent_pregled.broj_kartona);
+    int index = nadji_slobodan_index(fp, counter, slog->pacijent_pregled.broj_kartona);
     if (index == -1) {
         *status = 3; // Nema slobodnog mesta
         fclose(fp);
@@ -191,6 +197,7 @@ void upisi_slog_rasuta(PacijentPregledSlog* slog, const char* filename, int* sta
     }
     fseek(fp, index * sizeof(PacijentPregledSlog), SEEK_SET);
     fwrite(slog, sizeof(PacijentPregledSlog), 1, fp);
+    (*counter)++;
     *status = 0;
     fclose(fp);
 }
@@ -269,6 +276,8 @@ void prikazi_tri_pregleda(const char filename[], int* status)
 }
 void logicki_obrisi_slog(const char filename[], int broj_kartona, int* status)
 {
+    int counter = 0;
+    int trazenje_counter = 0;
     FILE* fp = fopen(filename, "rb+");
     if (fp == NULL) {
         *status = 2;
@@ -283,12 +292,17 @@ void logicki_obrisi_slog(const char filename[], int broj_kartona, int* status)
             long offset = index * sizeof(PacijentPregledSlog);
             fseek(fp, offset, SEEK_SET);
             fread(&slog, sizeof(PacijentPregledSlog), 1, fp);
+            counter++;
+            trazenje_counter++;
             if (slog.key == broj_kartona && slog.pacijent_pregled.broj_kartona == broj_kartona && slog.obrisan == NIJE_OBRISAN) {
+                evidentiraj_pristup_datoteci("log.dat", "trazenje", broj_kartona, trazenje_counter);
                 slog.obrisan = OBRISAN;
                 fseek(fp, offset, SEEK_SET);
                 fwrite(&slog, sizeof(PacijentPregledSlog), 1, fp);
+                counter++;
                 *status = 0;
                 fclose(fp);
+                evidentiraj_pristup_datoteci("log.dat", "brisanje", broj_kartona, counter);
                 return;
             }
         }
@@ -299,5 +313,128 @@ void logicki_obrisi_slog(const char filename[], int broj_kartona, int* status)
     }
     *status = 1;
     printf("Pacijent sa datim brojem kartona nije pronadjen");
+    evidentiraj_pristup_datoteci("log.dat", "brisanje", broj_kartona, counter);
+    fclose(fp);
+}
+void propagiraj_pacijenta_u_rasutu(Pacijent pacijent, const char rasuta_datoteka[], const char operacija[], int* status)
+{
+    int counter = 0;
+    int trazenje_counter = 0;
+    FILE* fp = fopen(rasuta_datoteka, "rb+");
+    if (fp == NULL) {
+        *status = 2;
+        return;
+    }
+    int broj_kartona = pacijent.broj_kartona;
+    int bucket = broj_kartona % B;
+    int init_idx = bucket;
+
+    PacijentPregledSlog slog;
+    for (int i = 0; i < B; i++) {
+        for (int j = 0; j < b; j++) {
+            int index = bucket * b + j;
+            long offset = index * sizeof(PacijentPregledSlog);
+            if (strcmp(operacija, "modifikacija") == 0) {
+                fseek(fp, offset, SEEK_SET);
+                fread(&slog, sizeof(PacijentPregledSlog), 1, fp);
+                trazenje_counter++;
+                counter++;
+                if (slog.key == broj_kartona && slog.pacijent_pregled.broj_kartona == broj_kartona && slog.obrisan == NIJE_OBRISAN) {
+                    evidentiraj_pristup_datoteci("log.dat", "trazenje", broj_kartona, trazenje_counter);
+                    slog.pacijent_pregled.tezina = pacijent.tezina;
+                    slog.pacijent_pregled.visina = pacijent.visina;
+                    strcpy(slog.pacijent_pregled.ime, pacijent.ime);
+                    strcpy(slog.pacijent_pregled.prezime, pacijent.prezime);
+                    strcpy(slog.pacijent_pregled.JMBG, pacijent.JMBG);
+                    slog.pacijent_pregled.broj_kartona = pacijent.broj_kartona;
+                    slog.obrisan = NIJE_OBRISAN;
+                    fseek(fp, offset, SEEK_SET);
+                    fwrite(&slog, sizeof(PacijentPregledSlog), 1, fp);
+                    counter++;
+
+                    evidentiraj_pristup_datoteci("log.dat", operacija, broj_kartona, counter);
+                    *status = 0;
+                    fclose(fp);
+                    return;
+                }
+            }
+            if (strcmp(operacija, "upis") == 0) {
+                PacijentPregledSlog slog = { 0 };
+                slog.pacijent_pregled.broj_kartona = pacijent.broj_kartona;
+                slog.pacijent_pregled.tezina = pacijent.tezina;
+                slog.pacijent_pregled.visina = pacijent.visina;
+                slog.key = broj_kartona;
+                slog.obrisan = NIJE_OBRISAN;
+                strcpy(slog.pacijent_pregled.ime, pacijent.ime);
+                strcpy(slog.pacijent_pregled.prezime, pacijent.prezime);
+                strcpy(slog.pacijent_pregled.JMBG, pacijent.JMBG);
+                upisi_slog_rasuta(&slog, &counter, rasuta_datoteka, status);
+                *status = 0;
+                fclose(fp);
+                evidentiraj_pristup_datoteci("log.dat", operacija, broj_kartona, counter);
+            }
+        }
+        bucket = (bucket + k) % B;
+        if (bucket == init_idx) {
+            break;
+        }
+    }
+
+    *status = 1;
+    printf("Pacijent sa datim brojem kartona nije pronadjen");
+    evidentiraj_pristup_datoteci("log.dat", operacija, broj_kartona, counter);
+    fclose(fp);
+}
+void propagiraj_pregled_u_rasutu(const char rasuta_datoteka[], PregledSlog pregled_slog, int* status)
+{
+    int counter = 0;
+    int trazenje_counter = 0;
+    FILE* fp = fopen(rasuta_datoteka, "rb+");
+    if (fp == NULL) {
+        *status = 2;
+        return;
+    }
+    int broj_kartona = pregled_slog.pregled.broj_kartona;
+    int bucket = broj_kartona % B;
+    int init_idx = bucket;
+
+    PacijentPregledSlog slog;
+    for (int i = 0; i < B; i++) {
+        for (int j = 0; j < b; j++) {
+            int index = bucket * b + j;
+            long offset = index * sizeof(PacijentPregledSlog);
+            fseek(fp, offset, SEEK_SET);
+            fread(&slog, sizeof(PacijentPregledSlog), 1, fp);
+            trazenje_counter++;
+            counter++;
+            if (slog.key == broj_kartona && slog.pacijent_pregled.broj_kartona == broj_kartona && slog.obrisan == NIJE_OBRISAN) {
+                evidentiraj_pristup_datoteci("log.dat", "trazenje", broj_kartona, trazenje_counter);
+                slog.pacijent_pregled.br_pregleda++;
+                slog.obrisan = NIJE_OBRISAN;
+                if (slog.pacijent_pregled.br_pregleda == 1) {
+                    slog.pacijent_pregled.prosecan_sistolni = pregled_slog.pregled.sistolni_pritisak;
+                    slog.pacijent_pregled.prosecan_dijastolni = pregled_slog.pregled.dijastolni_pritisak;
+                } else {
+                    slog.pacijent_pregled.prosecan_sistolni = (slog.pacijent_pregled.prosecan_sistolni * (slog.pacijent_pregled.br_pregleda - 1) + pregled_slog.pregled.sistolni_pritisak) / slog.pacijent_pregled.br_pregleda;
+                    slog.pacijent_pregled.prosecan_dijastolni = (slog.pacijent_pregled.prosecan_dijastolni * (slog.pacijent_pregled.br_pregleda - 1) + pregled_slog.pregled.dijastolni_pritisak) / slog.pacijent_pregled.br_pregleda;
+                }
+                fseek(fp, offset, SEEK_SET);
+                fwrite(&slog, sizeof(PacijentPregledSlog), 1, fp);
+                counter++;
+                *status = 0;
+                fclose(fp);
+                evidentiraj_pristup_datoteci("log.dat", "upis", broj_kartona, counter);
+                return;
+            }
+        }
+        bucket = (bucket + k) % B;
+        if (bucket == init_idx) {
+            break;
+        }
+    }
+
+    *status = 1;
+    printf("Pacijent sa datim brojem kartona nije pronadjen");
+    evidentiraj_pristup_datoteci("log.dat", "upis", broj_kartona, counter);
     fclose(fp);
 }
