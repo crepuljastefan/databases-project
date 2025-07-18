@@ -9,6 +9,9 @@ void prikazi_meni_rasute()
     printf("1. Formiraj datoteku pacijenata\n");
     printf("2. Formiraj datoteku pregleda\n");
     printf("3. Upisi slog u datoteku pacijenata\n");
+    printf("4. Prikazi prosecan sistolni i dijastolni pritisak pacijenta\n");
+    printf("5. Prikaz svih pacijenata koji su bili na barem 3 pregleda,\n a razlika izmedju sistolnog i dijastolnog pritiska je manja ili jednaka 25\n");
+    printf("6. Logičko brisanje aktuelnog sloga iz aktivne datoteke\n");
     printf("0. Izlaz iz rada sa rasutim datotekama\n");
 }
 void meni_rasute()

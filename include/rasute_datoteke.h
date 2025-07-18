@@ -17,4 +17,6 @@ void inicijalizuj_buckete(PacijentPregledSlog* bucketi);
 void pronadji_mesto_u_bucketu(PomocniPacijent* pomocni_pacijenti, PacijentPregledSlog* bucketi);
 void upisi_slog_rasuta(PacijentPregledSlog* slog, const char* filename, int* status);
 int nadji_slobodan_index(FILE* fp, int broj_kartona);
+int is_prekoracilac(int index, PacijentPregledSlog slog);
+void prikazi_tri_pregleda(const char filename[], int* status);
 #endif // RASUTE_DATOTEKE_H
