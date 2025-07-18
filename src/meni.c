@@ -1,5 +1,7 @@
 #include "../include/meni.h"
 #include "../include/datoteke.h"
+#include "../include/rasute_datoteke.h"
+#include "../include/rasute_meni.h"
 #define f1 4
 #define f2 6
 #include <stdio.h>
@@ -13,6 +15,7 @@ void prikazi_meni()
     printf("5. Prikazi alergiju pacijenta\n");
     printf("6. Prikazi pacijente sa jednakim pritiskom\n");
     printf("7. Modifikuj podatke o pacijentu\n");
+    printf("8. Rad sa rasutim datotekama\n");
     printf("0. Izlaz iz programa\n");
 }
 void meni()
@@ -30,6 +33,7 @@ void meni()
         PacijentSlog pacijent_slog;
         Pregled pregled;
         PregledSlog pregled_slog;
+        PacijentPregledSlog pacijent_pregled_slog;
         switch (izbor) {
         case 1:
             printf("Unesite ime datoteke: ");
@@ -116,6 +120,9 @@ void meni()
             scanf("%s", pacijent.alerg_polen);
 
             modifikuj_pacijenta(pacijent.broj_kartona, pacijent.ime, pacijent.prezime, pacijent.JMBG, pacijent.datum_rodjenja, pacijent.tezina, pacijent.visina, pacijent.alerg_polen);
+            break;
+        case 8:
+            meni_rasute();
             break;
         case 0:
             printf("Izlaz iz programa.\n");
