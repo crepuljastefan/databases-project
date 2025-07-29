@@ -6,6 +6,8 @@
 extern char pacijenti_filename[100];
 extern char pregledi_filename[100];
 extern char rasute_filename[100];
+void ispisi_datoteku_pregledi(const char* filename, int f);
+void ispisi_datoteku_pacijenti(const char* filename, int f);
 void set_pacijenti_file(const char* filename);
 void set_pregledi_file(const char* filename);
 void set_rasuta_file(const char* filename);

@@ -10,6 +10,7 @@ typedef struct {
     float dijastolni_suma;
     int br_pregleda;
 } PomocniPacijent;
+void ispisi_rasutu_datoteku(const char* filename, int broj_baketa, int faktor);
 void formiraj_rasutu_datoteku(char filename[], char pregledi_filename[], char pacijenti_filename[], int* status);
 void ucitaj_pacijente(FILE* pacijenti_fp, PacijentSlog* pacijentBlok, PomocniPacijent* pomocni_pacijenti);
 void ucitaj_preglede(FILE* pregledi_fp, PregledSlog* pregledBlok, PomocniPacijent* pomocni_pacijenti);

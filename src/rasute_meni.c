@@ -18,6 +18,7 @@ void meni_rasute()
 {
     int status = -1;
     int izbor;
+    int cnt = 0;
     do {
         prikazi_meni_rasute();
         printf("Unesite izbor: ");
@@ -39,7 +40,19 @@ void meni_rasute()
             break;
         case 2:
             if (rasute_filename[0] == '\0') {
-                printf("Rasuta datoteka nije formirana. Molimo prvo formirajte rasutu datoteku.\n");
+                printf("Datoteka pacijenata nije otvorena.\n Unesite ime datoteke: ");
+                while (fopen(filename, "rb") == NULL) {
+                    if (cnt == 3) {
+                        printf("Prekoračen broj pokušaja. Proverite da li ste formirali datoteku!\n");
+                        cnt = 0;
+                        break;
+                    }
+                    cnt++;
+                    printf("Datoteka ne postoji. Unesite ime datoteke: ");
+                    scanf("%s", filename);
+                }
+                set_rasuta_file(filename);
+                memset(filename, 0, sizeof(filename));
                 break;
             }
             printf("Unesite broj kartona: \n");
@@ -65,9 +78,20 @@ void meni_rasute()
             break;
 
         case 3:
-
             if (rasute_filename[0] == '\0') {
-                printf("Rasuta datoteka nije formirana. Molimo prvo formirajte rasutu datoteku.\n");
+                printf("Datoteka nije otvorena.\n Unesite ime datoteke: ");
+                while (fopen(filename, "rb") == NULL) {
+                    if (cnt == 3) {
+                        printf("Prekoračen broj pokušaja. Proverite da li ste formirali datoteku!\n");
+                        cnt = 0;
+                        break;
+                    }
+                    cnt++;
+                    printf("Datoteka ne postoji. Unesite ime datoteke: ");
+                    scanf("%s", filename);
+                }
+                set_rasuta_file(filename);
+                memset(filename, 0, sizeof(filename));
                 break;
             }
             printf("Unesite broj kartona pacijenta: \n");
@@ -76,8 +100,21 @@ void meni_rasute()
             prikazi_prosecan_pritisak(rasute_filename, broj_kartona, &status);
             break;
         case 4:
+
             if (rasute_filename[0] == '\0') {
-                printf("Rasuta datoteka nije formirana. Molimo prvo formirajte rasutu datoteku.\n");
+                printf("Datoteka nije otvorena.\n Unesite ime datoteke: ");
+                while (fopen(filename, "rb") == NULL) {
+                    if (cnt == 3) {
+                        printf("Prekoračen broj pokušaja. Proverite da li ste formirali datoteku!\n");
+                        cnt = 0;
+                        break;
+                    }
+                    cnt++;
+                    printf("Datoteka ne postoji. Unesite ime datoteke: ");
+                    scanf("%s", filename);
+                }
+                set_rasuta_file(filename);
+                memset(filename, 0, sizeof(filename));
                 break;
             }
             printf("Prikaz svih pacijenata koji su bili na barem 3 pregleda, a razlika izmedju sistolnog i dijastolnog pritiska je manja ili jednaka 25.\n");
@@ -88,7 +125,19 @@ void meni_rasute()
             break;
         case 5:
             if (rasute_filename[0] == '\0') {
-                printf("Rasuta datoteka nije formirana. Molimo prvo formirajte rasutu datoteku.\n");
+                printf("Datoteka nije otvorena.\n Unesite ime datoteke: ");
+                while (fopen(filename, "rb") == NULL) {
+                    if (cnt == 3) {
+                        printf("Prekoračen broj pokušaja. Proverite da li ste formirali datoteku!\n");
+                        cnt = 0;
+                        break;
+                    }
+                    cnt++;
+                    printf("Datoteka ne postoji. Unesite ime datoteke: ");
+                    scanf("%s", filename);
+                }
+                set_rasuta_file(filename);
+                memset(filename, 0, sizeof(filename));
                 break;
             }
             printf("Unesite broj kartona pacijenta za brisanje: \n");

@@ -2,6 +2,7 @@
 #include "../include/datoteke.h"
 #include "../include/rasute_datoteke.h"
 #include "../include/rasute_meni.h"
+#include <string.h>
 #define f1 4
 #define f2 6
 #include <stdio.h>
@@ -18,11 +19,13 @@ void prikazi_meni()
     printf("8. Rad sa rasutim datotekama\n");
     printf("9. Prikaži izveštaj datoteka sa evidencijama\n");
     printf("10. Prikaži prosečan broj pristupa po operaciji\n");
+    printf("11. Prikaži ispis svake datoteke\n");
     printf("0. Izlaz iz programa\n");
 }
 void meni()
 {
     int status = -1;
+    int cnt = 0;
     int izbor;
     do {
         prikazi_meni();
@@ -54,9 +57,22 @@ void meni()
             // printf("Unesite ime datoteke: ");
             // scanf("%s", filename);
             if (pacijenti_filename[0] == '\0') {
-                printf("Datoteka pacijenata nije formirana. Molimo prvo formirajte datoteku pacijenata.\n");
+                printf("Datoteka pacijenata nije otvorena.\n Unesite ime datoteke: ");
+                while (fopen(unos, "rb") == NULL) {
+                    if (cnt == 3) {
+                        printf("Prekoračen broj pokušaja. Proverite da li ste formirali datoteku!\n");
+                        cnt = 0;
+                        break;
+                    }
+                    cnt++;
+                    printf("Datoteka ne postoji. Unesite ime datoteke: ");
+                    scanf("%s", unos);
+                }
+                set_pacijenti_file(unos);
+                memset(unos, 0, sizeof(unos));
                 break;
             }
+
             printf("Popunite podatke pacijenta:\n");
             printf("Ime:\n");
             scanf("%s", pacijent.ime);
@@ -83,9 +99,23 @@ void meni()
             // printf("Unesite ime datoteke: ");
             // scanf("%s", filename);
             if (pregledi_filename[0] == '\0') {
-                printf("Datoteka pregleda nije formirana. Molimo prvo formirajte datoteku pregleda.\n");
+                printf("Datoteka nije otvorena. Unesite ime datoteke: ");
+                scanf("%s", unos);
+                while (fopen(unos, "rb") == NULL) {
+                    if (cnt == 3) {
+                        printf("Prekoračen broj pokušaja. Proverite da li ste formirali datoteku!\n");
+                        cnt = 0;
+                        break;
+                    }
+                    cnt++;
+                    printf("Datoteka ne postoji. Unesite ime datoteke: ");
+                    scanf("%s", unos);
+                }
+                set_pregledi_file(unos);
+                memset(unos, 0, sizeof(unos));
                 break;
             }
+
             printf("%s", pregledi_filename);
             printf("Popunite podatke pregleda:\n");
             printf("ID pregleda:\n");
@@ -104,8 +134,22 @@ void meni()
             upisi_slog_datoteke_pregledi(pregledi_filename, &status, &pregled_slog, f2);
             break;
         case 5:
+
             if (pacijenti_filename[0] == '\0') {
-                printf("Datoteka pacijenata nije formirana. Molimo prvo formirajte datoteku pacijenata.\n");
+                printf("Datoteka pacijenata nije otvorena.\n Unesite ime datoteke: ");
+                while (fopen(unos, "rb") == NULL) {
+                    if (cnt == 3) {
+                        printf("Prekoračen broj pokušaja. Proverite da li ste formirali datoteku!\n");
+                        cnt = 0;
+                        break;
+                    }
+                    cnt++;
+                    printf("Datoteka ne postoji. Unesite ime datoteke: ");
+                    scanf("%s", unos);
+                }
+                set_pacijenti_file(unos);
+                memset(unos, 0, sizeof(unos));
+                break;
             }
             printf("Unesite broj kartona pacijenta: ");
             int broj_kartona;
@@ -114,13 +158,40 @@ void meni()
             break;
         case 6:
             if (pregledi_filename[0] == '\0') {
-                printf("Datoteka pregleda nije formirana. Molimo prvo formirajte datoteku pregleda.\n");
+                printf("Datoteka pregleda nije otvorena.\n Unesite ime datoteke: ");
+                while (fopen(unos, "rb") == NULL) {
+                    if (cnt == 3) {
+                        printf("Prekoračen broj pokušaja. Proverite da li ste formirali datoteku!\n");
+                        cnt = 0;
+                        break;
+                    }
+                    cnt++;
+                    printf("Datoteka ne postoji. Unesite ime datoteke: ");
+                    scanf("%s", unos);
+                }
+                set_pregledi_file(unos);
+                memset(unos, 0, sizeof(unos));
+                break;
             }
+
             prikaz_pritiska(pregledi_filename);
             break;
         case 7:
+
             if (pacijenti_filename[0] == '\0') {
-                printf("Datoteka pacijenata nije formirana. Molimo prvo formirajte datoteku pacijenata.\n");
+                printf("Datoteka pacijenata nije otvorena.\n Unesite ime datoteke: ");
+                while (fopen(unos, "rb") == NULL) {
+                    if (cnt == 3) {
+                        printf("Prekoračen broj pokušaja. Proverite da li ste formirali datoteku!\n");
+                        cnt = 0;
+                        break;
+                    }
+                    cnt++;
+                    printf("Datoteka ne postoji. Unesite ime datoteke: ");
+                    scanf("%s", unos);
+                }
+                set_pacijenti_file(unos);
+                memset(unos, 0, sizeof(unos));
                 break;
             }
             printf("Unesite broj kartona pacijenta kojeg zelite da modifikujete: ");
@@ -162,6 +233,24 @@ void meni()
             scanf("%d", &prag);
             printf("Prosecni broj pristupa po operaciji:\n");
             prikazi_izvestaj_evidencija("log.dat", prag);
+            break;
+
+        case 11:
+            printf("\nTESTNI ISPIS SVIH DATOTEKA\n");
+            if (pacijenti_filename[0] != '\0')
+                ispisi_datoteku_pacijenti(pacijenti_filename, f1);
+            else
+                printf("Pacijenti: Datoteka nije otvorena.\n");
+
+            if (pregledi_filename[0] != '\0')
+                ispisi_datoteku_pregledi(pregledi_filename, f2);
+            else
+                printf("Pregledi: Datoteka nije otvorena.\n");
+
+            if (rasute_filename[0] != '\0')
+                ispisi_rasutu_datoteku(rasute_filename, 9, 4);
+            else
+                printf("Rasuta: Datoteka nije otvorena.\n");
             break;
         case 0:
             printf("Izlaz iz programa.\n");

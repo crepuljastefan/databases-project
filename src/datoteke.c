@@ -9,6 +9,59 @@ char pacijenti_filename[100] = "";
 char pregledi_filename[100] = "";
 char rasute_filename[100] = "";
 
+void ispisi_datoteku_pregledi(const char* filename, int f)
+{
+    FILE* fajl = fopen(filename, "rb");
+    if (!fajl) {
+        printf("Ne mogu da otvorim datoteku pregleda!\n");
+        return;
+    }
+
+    PregledSlog slog;
+    printf("\n--- SADRŽAJ DATOTEKE PREGLEDA ---\n");
+    int i = 0;
+    while (fread(&slog, sizeof(PregledSlog), 1, fajl)) {
+        printf("[%02d] ID: %d | Karton: %d | Datum: %s | Sist: %d | Dijast: %d | Obrisan: %d\n",
+            ++i,
+            slog.pregled.id,
+            slog.pregled.broj_kartona,
+            slog.pregled.datum_pregleda,
+            slog.pregled.sistolni_pritisak,
+            slog.pregled.dijastolni_pritisak,
+            slog.obrisan);
+        if (i % f == 0)
+            printf("---- KRAJ BLOKA ----\n");
+    }
+    fclose(fajl);
+}
+void ispisi_datoteku_pacijenti(const char* filename, int f)
+{
+    FILE* fajl = fopen(filename, "rb");
+    if (!fajl) {
+        printf("Ne mogu da otvorim datoteku pacijenata!\n");
+        return;
+    }
+
+    PacijentSlog slog;
+    printf("\n--- SADRŽAJ DATOTEKE PACIJENATA ---\n");
+    int i = 0;
+    while (fread(&slog, sizeof(PacijentSlog), 1, fajl)) {
+        printf("[%02d] Karton: %d | Ime: %s | Prezime: %s | JMBG: %s | Datum: %s | Tezina: %.1f | Visina: %.1f | Alergija: %s | Obrisan: %d\n",
+            ++i,
+            slog.pacijent.broj_kartona,
+            slog.pacijent.ime,
+            slog.pacijent.prezime,
+            slog.pacijent.JMBG,
+            slog.pacijent.datum_rodjenja,
+            slog.pacijent.tezina,
+            slog.pacijent.visina,
+            slog.pacijent.alerg_polen,
+            slog.obrisan);
+        if (i % f == 0)
+            printf("---- KRAJ BLOKA ----\n");
+    }
+    fclose(fajl);
+}
 void set_pacijenti_file(const char* filename)
 {
     strncpy(pacijenti_filename, filename, 100 - 1);
@@ -325,6 +378,10 @@ void prikaz_pritiska(char filename[])
                     continue;
                 }
                 ispisi_pacijenta(pacijentSlog->pacijent);
+                printf("ID pregleda: %d\n", blok[i].pregled.id);
+                printf("Datum pregleda: %s\n", blok[i].pregled.datum_pregleda);
+                printf("Broj kartona: %d\n", blok[i].pregled.broj_kartona);
+                printf("Dijastolni pritisak: %d\n", blok[i].pregled.dijastolni_pritisak);
                 printf("Sistolni pritisak: %d\n", blok[i].pregled.sistolni_pritisak);
                 printf("Adresa bloka: %d\n", trenutni_blok);
                 printf("Broj sloga: %d\n", i);

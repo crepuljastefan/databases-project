@@ -281,6 +281,7 @@ void prikazi_tri_pregleda(const char filename[], int* status)
             found++;
             PacijentSlog* pacijentSlog = pronadji_slog_pacijent(pacijenti_filename, slog.pacijent_pregled.broj_kartona);
             ispisi_pacijenta(pacijentSlog->pacijent);
+            printf("ID pregleda: %d\n", slog.pacijent_pregled.broj_kartona);
             printf("Prosecni sistolni pritisak: %.2f\n", slog.pacijent_pregled.prosecan_sistolni);
             printf("Prosecni dijastolni pritisak: %.2f\n", slog.pacijent_pregled.prosecan_dijastolni);
             printf("Adresa baketa: %d\n", bucket);
@@ -465,4 +466,33 @@ void propagiraj_pregled_u_rasutu(const char rasuta_datoteka[], PregledSlog pregl
     printf("Pacijent sa datim brojem kartona nije pronadjen");
     evidentiraj_pristup_datoteci("log.dat", "upis", broj_kartona, counter);
     fclose(fp);
+}
+void ispisi_rasutu_datoteku(const char* filename, int broj_baketa, int faktor)
+{
+    FILE* fajl = fopen(filename, "rb");
+    if (!fajl) {
+        printf("Ne mogu da otvorim rasutu datoteku!\n");
+        return;
+    }
+
+    PacijentPregledSlog slog;
+    printf("\n--- SADRŽAJ RASUTE DATOTEKE ---\n");
+
+    for (int i = 0; i < broj_baketa; i++) {
+        printf("\nBAKET %d:\n", i);
+        for (int a = 0; a < faktor; a++) {
+            fread(&slog, sizeof(PacijentPregledSlog), 1, fajl);
+            printf("[%d.%d] Karton: %d | Ime: %s | Prezime: %s | Prosečan Sist: %.1f | Prosečan Dijast: %.1f | Br pregleda: %d | Obrisan: %d\n",
+                i, a,
+                slog.pacijent_pregled.broj_kartona,
+                slog.pacijent_pregled.ime,
+                slog.pacijent_pregled.prezime,
+                slog.pacijent_pregled.prosecan_sistolni,
+                slog.pacijent_pregled.prosecan_dijastolni,
+                slog.pacijent_pregled.br_pregleda,
+                slog.obrisan);
+        }
+    }
+
+    fclose(fajl);
 }
