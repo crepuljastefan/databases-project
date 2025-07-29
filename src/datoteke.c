@@ -122,8 +122,8 @@ void upisi_slog_datoteke_pacijenti(char filename[], int* status, PacijentSlog* p
         Pacijent prazan_pacijent = { 0 };
         for (int j = 0; j < faktor_blokiranja; j++) {
             novi_blok[j].pacijent = prazan_pacijent;
-            novi_blok[j].obrisan = 0;
             novi_blok[j].key = 0;
+            novi_blok[j].obrisan = 0;
         }
         novi_blok[0] = *pacijent_slog;
         novi_blok[0].obrisan = 0;

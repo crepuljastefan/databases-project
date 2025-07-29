@@ -38,6 +38,10 @@ void meni_rasute()
             printf("Formirana je rasuta datoteka pacijenata i pregleda.\n");
             break;
         case 2:
+            if (rasute_filename[0] == '\0') {
+                printf("Rasuta datoteka nije formirana. Molimo prvo formirajte rasutu datoteku.\n");
+                break;
+            }
             printf("Unesite broj kartona: \n");
             scanf("%d", &pacijent_pregled_slog.pacijent_pregled.broj_kartona);
             printf("Unesite prosecan sistolni pritisak: \n");
@@ -61,12 +65,21 @@ void meni_rasute()
             break;
 
         case 3:
+
+            if (rasute_filename[0] == '\0') {
+                printf("Rasuta datoteka nije formirana. Molimo prvo formirajte rasutu datoteku.\n");
+                break;
+            }
             printf("Unesite broj kartona pacijenta: \n");
             int broj_kartona;
             scanf("%d", &broj_kartona);
             prikazi_prosecan_pritisak(rasute_filename, broj_kartona, &status);
             break;
         case 4:
+            if (rasute_filename[0] == '\0') {
+                printf("Rasuta datoteka nije formirana. Molimo prvo formirajte rasutu datoteku.\n");
+                break;
+            }
             printf("Prikaz svih pacijenata koji su bili na barem 3 pregleda, a razlika izmedju sistolnog i dijastolnog pritiska je manja ili jednaka 25.\n");
             prikazi_tri_pregleda(rasute_filename, &status);
             if (status == 1) {
@@ -74,6 +87,10 @@ void meni_rasute()
             }
             break;
         case 5:
+            if (rasute_filename[0] == '\0') {
+                printf("Rasuta datoteka nije formirana. Molimo prvo formirajte rasutu datoteku.\n");
+                break;
+            }
             printf("Unesite broj kartona pacijenta za brisanje: \n");
             int broj_kartona_br;
             scanf("%d", &broj_kartona_br);

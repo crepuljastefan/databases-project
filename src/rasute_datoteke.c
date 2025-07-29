@@ -5,7 +5,6 @@
 #include "../include/pacijent_slog.h"
 #include "../include/pregled_slog.h"
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #define KRAJ_DATOTEKE -1
@@ -164,6 +163,11 @@ int nadji_slobodan_index(FILE* fp, int* counter, int broj_kartona)
     int bucket_index = broj_kartona % B;
     int init_idx = bucket_index;
     PacijentPregledSlog slog;
+    PacijentSlog* pslog = pronadji_slog_pacijent(pacijenti_filename, broj_kartona);
+    if (pslog != NULL) {
+        evidentiraj_pristup_datoteci("log.dat", "trazenje", broj_kartona, trazenje_counter);
+        return -1;
+    }
     for (int i = 0; i < B; i++) {
         for (int j = 0; j < b; j++) {
             int index = bucket_index * b + j;
@@ -172,7 +176,7 @@ int nadji_slobodan_index(FILE* fp, int* counter, int broj_kartona)
             fread(&slog, sizeof(PacijentPregledSlog), 1, fp);
             trazenje_counter++;
             (*counter)++;
-            if (slog.key == KRAJ_DATOTEKE || slog.obrisan != NIJE_OBRISAN) {
+            if (slog.key == -1 || slog.obrisan != NIJE_OBRISAN) {
                 evidentiraj_pristup_datoteci("log.dat", "trazenje", broj_kartona, trazenje_counter);
                 return index;
             }
@@ -195,10 +199,13 @@ void upisi_slog_rasuta(PacijentPregledSlog* slog, int* counter, const char* file
     }
     int index = nadji_slobodan_index(fp, counter, slog->pacijent_pregled.broj_kartona);
     if (index == -1) {
-        *status = 3; // Nema slobodnog mesta
+        *status = 3;
+        printf("Nema slobodnog mesta u datoteci.\n");
         fclose(fp);
         return;
     }
+    slog->obrisan = NIJE_OBRISAN;
+    slog->key = slog->pacijent_pregled.broj_kartona;
     fseek(fp, index * sizeof(PacijentPregledSlog), SEEK_SET);
     fwrite(slog, sizeof(PacijentPregledSlog), 1, fp);
     (*counter)++;
@@ -223,8 +230,13 @@ void prikazi_prosecan_pritisak(const char filename[], int broj_kartona, int* sta
             fread(&slog, sizeof(PacijentPregledSlog), 1, fp);
 
             if (slog.key == broj_kartona && slog.pacijent_pregled.broj_kartona == broj_kartona && slog.obrisan == NIJE_OBRISAN) {
+                printf("Ime: %s\n", slog.pacijent_pregled.ime);
+                printf("Prezime: %s\n", slog.pacijent_pregled.prezime);
+                printf("JMBG: %s\n", slog.pacijent_pregled.JMBG);
+                printf("Broj kartona: %d\n", slog.pacijent_pregled.broj_kartona);
                 printf("Prosecni sistolni pritisak: %.2f\n", slog.pacijent_pregled.prosecan_sistolni);
                 printf("Prosecni dijastolni pritisak: %.2f\n", slog.pacijent_pregled.prosecan_dijastolni);
+
                 printf("Adresa baketa: %d, \n Broj sloga: %d \n", bucket, j);
                 fclose(fp);
                 *status = 0;
@@ -269,6 +281,8 @@ void prikazi_tri_pregleda(const char filename[], int* status)
             found++;
             PacijentSlog* pacijentSlog = pronadji_slog_pacijent(pacijenti_filename, slog.pacijent_pregled.broj_kartona);
             ispisi_pacijenta(pacijentSlog->pacijent);
+            printf("Prosecni sistolni pritisak: %.2f\n", slog.pacijent_pregled.prosecan_sistolni);
+            printf("Prosecni dijastolni pritisak: %.2f\n", slog.pacijent_pregled.prosecan_dijastolni);
             printf("Adresa baketa: %d\n", bucket);
             printf("Broj sloga: %d\n", slog_u_baketu);
             *status = 0;

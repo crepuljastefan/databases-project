@@ -53,6 +53,10 @@ void meni()
         case 3:
             // printf("Unesite ime datoteke: ");
             // scanf("%s", filename);
+            if (pacijenti_filename[0] == '\0') {
+                printf("Datoteka pacijenata nije formirana. Molimo prvo formirajte datoteku pacijenata.\n");
+                break;
+            }
             printf("Popunite podatke pacijenta:\n");
             printf("Ime:\n");
             scanf("%s", pacijent.ime);
@@ -74,11 +78,14 @@ void meni()
             pacijent_slog.key = pacijent.broj_kartona;
             pacijent_slog.obrisan = 0;
             upisi_slog_datoteke_pacijenti(pacijenti_filename, &status, &pacijent_slog, f1);
-            // upisi_slog_datoteke_pacijenti(filename, );
             break;
         case 4:
             // printf("Unesite ime datoteke: ");
             // scanf("%s", filename);
+            if (pregledi_filename[0] == '\0') {
+                printf("Datoteka pregleda nije formirana. Molimo prvo formirajte datoteku pregleda.\n");
+                break;
+            }
             printf("%s", pregledi_filename);
             printf("Popunite podatke pregleda:\n");
             printf("ID pregleda:\n");
@@ -97,15 +104,25 @@ void meni()
             upisi_slog_datoteke_pregledi(pregledi_filename, &status, &pregled_slog, f2);
             break;
         case 5:
+            if (pacijenti_filename[0] == '\0') {
+                printf("Datoteka pacijenata nije formirana. Molimo prvo formirajte datoteku pacijenata.\n");
+            }
             printf("Unesite broj kartona pacijenta: ");
             int broj_kartona;
             scanf("%d", &broj_kartona);
             prikazi_alergije(pacijenti_filename, broj_kartona);
             break;
         case 6:
+            if (pregledi_filename[0] == '\0') {
+                printf("Datoteka pregleda nije formirana. Molimo prvo formirajte datoteku pregleda.\n");
+            }
             prikaz_pritiska(pregledi_filename);
             break;
         case 7:
+            if (pacijenti_filename[0] == '\0') {
+                printf("Datoteka pacijenata nije formirana. Molimo prvo formirajte datoteku pacijenata.\n");
+                break;
+            }
             printf("Unesite broj kartona pacijenta kojeg zelite da modifikujete: ");
             scanf("%d", &pacijent.broj_kartona);
             printf("Unesite novo ime: ");
@@ -129,9 +146,17 @@ void meni()
             meni_rasute();
             break;
         case 9:
+            if (fopen("log.dat", "rb") == NULL) {
+                printf("Datoteka log.dat ne postoji. Molimo prvo evidentirajte pristupe.\n");
+                break;
+            }
             ispisi_datoteku_evidencija("log.dat", &status);
             break;
         case 10:
+            if (fopen("log.dat", "rb") == NULL) {
+                printf("Datoteka log.dat ne postoji. Molimo prvo evidentirajte pristupe.\n");
+                break;
+            }
             printf("Unesite prag za prosecan broj pristupa po operaciji: ");
             int prag;
             scanf("%d", &prag);
