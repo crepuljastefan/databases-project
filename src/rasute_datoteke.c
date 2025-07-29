@@ -30,6 +30,8 @@ void formiraj_rasutu_datoteku(char filename[], char pregledi_filename[], char pa
         *status = 2;
         return;
     }
+    printf("%s", pacijenti_filename);
+    printf("%s", pregledi_filename);
     FILE* pacijenti_fp = fopen(pacijenti_filename, "rb");
     FILE* pregledi_fp = fopen(pregledi_filename, "rb");
     if (pacijenti_fp == NULL || pregledi_fp == NULL) {
@@ -41,6 +43,7 @@ void formiraj_rasutu_datoteku(char filename[], char pregledi_filename[], char pa
     PregledSlog pregledBlok[f2];
     PacijentPregledSlog bucketi[B * b];
     PomocniPacijent pomocni_pacijenti[B * b];
+    memset(pomocni_pacijenti, 0, sizeof pomocni_pacijenti);
     int trenutni_pacijent = 0;
     ucitaj_pacijente(pacijenti_fp, pacijentBlok, pomocni_pacijenti);
     ucitaj_preglede(pregledi_fp, pregledBlok, pomocni_pacijenti);
@@ -83,6 +86,7 @@ void pronadji_mesto_u_bucketu(PomocniPacijent* pomocni_pacijenti, PacijentPregle
                         bucketi[index].pacijent_pregled.prosecan_dijastolni = 0;
                         bucketi[index].pacijent_pregled.prosecan_sistolni = 0;
                     } else {
+                        bucketi[index].pacijent_pregled.br_pregleda = pomocni_pacijenti[i].br_pregleda;
                         bucketi[index].pacijent_pregled.prosecan_dijastolni = pomocni_pacijenti[i].dijastolni_suma / pomocni_pacijenti[i].br_pregleda;
                         bucketi[index].pacijent_pregled.prosecan_sistolni = pomocni_pacijenti[i].sistolni_suma / pomocni_pacijenti[i].br_pregleda;
                     }
@@ -217,7 +221,8 @@ void prikazi_prosecan_pritisak(const char filename[], int broj_kartona, int* sta
             long offset = index * sizeof(PacijentPregledSlog);
             fseek(fp, offset, SEEK_SET);
             fread(&slog, sizeof(PacijentPregledSlog), 1, fp);
-            if (is_prekoracilac(index, slog) == 0 && slog.key == broj_kartona && slog.pacijent_pregled.broj_kartona == broj_kartona && slog.obrisan == NIJE_OBRISAN) {
+
+            if (slog.key == broj_kartona && slog.pacijent_pregled.broj_kartona == broj_kartona && slog.obrisan == NIJE_OBRISAN) {
                 printf("Prosecni sistolni pritisak: %.2f\n", slog.pacijent_pregled.prosecan_sistolni);
                 printf("Prosecni dijastolni pritisak: %.2f\n", slog.pacijent_pregled.prosecan_dijastolni);
                 printf("Adresa baketa: %d, \n Broj sloga: %d \n", bucket, j);
@@ -253,14 +258,16 @@ void prikazi_tri_pregleda(const char filename[], int* status)
     int found = 0;
     while (fread(&slog, sizeof(PacijentPregledSlog), 1, fp) == 1) {
         int razlika = slog.pacijent_pregled.prosecan_sistolni - slog.pacijent_pregled.prosecan_dijastolni;
-        if (is_prekoracilac(index, slog)) {
-            printf("Slog je prekoracilac!\n");
-        }
+
         if (slog.obrisan == NIJE_OBRISAN && slog.pacijent_pregled.br_pregleda >= 3 && razlika <= 25) {
+
+            if (is_prekoracilac(index, slog)) {
+                printf("Slog je prekoracilac!\n");
+            }
             int bucket = slog.key % B;
             int slog_u_baketu = index % b;
             found++;
-            PacijentSlog* pacijentSlog = pronadji_slog_pacijent("pacijenti.dat", slog.pacijent_pregled.broj_kartona);
+            PacijentSlog* pacijentSlog = pronadji_slog_pacijent(pacijenti_filename, slog.pacijent_pregled.broj_kartona);
             ispisi_pacijenta(pacijentSlog->pacijent);
             printf("Adresa baketa: %d\n", bucket);
             printf("Broj sloga: %d\n", slog_u_baketu);
@@ -316,7 +323,7 @@ void logicki_obrisi_slog(const char filename[], int broj_kartona, int* status)
     evidentiraj_pristup_datoteci("log.dat", "brisanje", broj_kartona, counter);
     fclose(fp);
 }
-void propagiraj_pacijenta_u_rasutu(Pacijent pacijent, const char rasuta_datoteka[], const char operacija[], int* status)
+void propagiraj_pacijenta_u_rasutu(PacijentSlog pacijentSlog, const char rasuta_datoteka[], const char operacija[], int* status)
 {
     int counter = 0;
     int trazenje_counter = 0;
@@ -325,7 +332,8 @@ void propagiraj_pacijenta_u_rasutu(Pacijent pacijent, const char rasuta_datoteka
         *status = 2;
         return;
     }
-    int broj_kartona = pacijent.broj_kartona;
+    int broj_kartona = pacijentSlog.key;
+    printf("Broj kartona: %d\n", broj_kartona);
     int bucket = broj_kartona % B;
     int init_idx = bucket;
 
@@ -341,12 +349,12 @@ void propagiraj_pacijenta_u_rasutu(Pacijent pacijent, const char rasuta_datoteka
                 counter++;
                 if (slog.key == broj_kartona && slog.pacijent_pregled.broj_kartona == broj_kartona && slog.obrisan == NIJE_OBRISAN) {
                     evidentiraj_pristup_datoteci("log.dat", "trazenje", broj_kartona, trazenje_counter);
-                    slog.pacijent_pregled.tezina = pacijent.tezina;
-                    slog.pacijent_pregled.visina = pacijent.visina;
-                    strcpy(slog.pacijent_pregled.ime, pacijent.ime);
-                    strcpy(slog.pacijent_pregled.prezime, pacijent.prezime);
-                    strcpy(slog.pacijent_pregled.JMBG, pacijent.JMBG);
-                    slog.pacijent_pregled.broj_kartona = pacijent.broj_kartona;
+                    slog.pacijent_pregled.tezina = pacijentSlog.pacijent.tezina;
+                    slog.pacijent_pregled.visina = pacijentSlog.pacijent.visina;
+                    strcpy(slog.pacijent_pregled.ime, pacijentSlog.pacijent.ime);
+                    strcpy(slog.pacijent_pregled.prezime, pacijentSlog.pacijent.prezime);
+                    strcpy(slog.pacijent_pregled.JMBG, pacijentSlog.pacijent.JMBG);
+                    slog.pacijent_pregled.broj_kartona = pacijentSlog.pacijent.broj_kartona;
                     slog.obrisan = NIJE_OBRISAN;
                     fseek(fp, offset, SEEK_SET);
                     fwrite(&slog, sizeof(PacijentPregledSlog), 1, fp);
@@ -360,18 +368,24 @@ void propagiraj_pacijenta_u_rasutu(Pacijent pacijent, const char rasuta_datoteka
             }
             if (strcmp(operacija, "upis") == 0) {
                 PacijentPregledSlog slog = { 0 };
-                slog.pacijent_pregled.broj_kartona = pacijent.broj_kartona;
-                slog.pacijent_pregled.tezina = pacijent.tezina;
-                slog.pacijent_pregled.visina = pacijent.visina;
-                slog.key = broj_kartona;
+                slog.pacijent_pregled.broj_kartona = pacijentSlog.pacijent.broj_kartona;
+                slog.pacijent_pregled.tezina = pacijentSlog.pacijent.tezina;
+                slog.pacijent_pregled.visina = pacijentSlog.pacijent.visina;
+                slog.key = pacijentSlog.key;
+                printf("evo me ovde, %d %d", slog.key, pacijentSlog.key);
                 slog.obrisan = NIJE_OBRISAN;
-                strcpy(slog.pacijent_pregled.ime, pacijent.ime);
-                strcpy(slog.pacijent_pregled.prezime, pacijent.prezime);
-                strcpy(slog.pacijent_pregled.JMBG, pacijent.JMBG);
-                upisi_slog_rasuta(&slog, &counter, rasuta_datoteka, status);
+                strcpy(slog.pacijent_pregled.ime, pacijentSlog.pacijent.ime);
+                strcpy(slog.pacijent_pregled.prezime, pacijentSlog.pacijent.prezime);
+                strcpy(slog.pacijent_pregled.JMBG, pacijentSlog.pacijent.JMBG);
+                // upisi_slog_rasuta(&slog, &counter, rasuta_datoteka, status);
+                fseek(fp, offset, SEEK_SET);
+                fwrite(&slog, sizeof(PacijentPregledSlog), 1, fp);
+                counter++;
                 *status = 0;
-                fclose(fp);
+                *status = 0;
                 evidentiraj_pristup_datoteci("log.dat", operacija, broj_kartona, counter);
+                fclose(fp);
+                return;
             }
         }
         bucket = (bucket + k) % B;
@@ -411,13 +425,13 @@ void propagiraj_pregled_u_rasutu(const char rasuta_datoteka[], PregledSlog pregl
                 evidentiraj_pristup_datoteci("log.dat", "trazenje", broj_kartona, trazenje_counter);
                 slog.pacijent_pregled.br_pregleda++;
                 slog.obrisan = NIJE_OBRISAN;
-                if (slog.pacijent_pregled.br_pregleda == 1) {
-                    slog.pacijent_pregled.prosecan_sistolni = pregled_slog.pregled.sistolni_pritisak;
-                    slog.pacijent_pregled.prosecan_dijastolni = pregled_slog.pregled.dijastolni_pritisak;
-                } else {
-                    slog.pacijent_pregled.prosecan_sistolni = (slog.pacijent_pregled.prosecan_sistolni * (slog.pacijent_pregled.br_pregleda - 1) + pregled_slog.pregled.sistolni_pritisak) / slog.pacijent_pregled.br_pregleda;
-                    slog.pacijent_pregled.prosecan_dijastolni = (slog.pacijent_pregled.prosecan_dijastolni * (slog.pacijent_pregled.br_pregleda - 1) + pregled_slog.pregled.dijastolni_pritisak) / slog.pacijent_pregled.br_pregleda;
-                }
+                // Dodajemo nove vrednosti u sumu
+                slog.pacijent_pregled.suma_sistolni += pregled_slog.pregled.sistolni_pritisak;
+                slog.pacijent_pregled.suma_dijastolni += pregled_slog.pregled.dijastolni_pritisak;
+
+                // Računamo prosek deljenjem sume sa brojem pregleda
+                slog.pacijent_pregled.prosecan_sistolni = slog.pacijent_pregled.suma_sistolni / slog.pacijent_pregled.br_pregleda;
+                slog.pacijent_pregled.prosecan_dijastolni = slog.pacijent_pregled.suma_dijastolni / slog.pacijent_pregled.br_pregleda;
                 fseek(fp, offset, SEEK_SET);
                 fwrite(&slog, sizeof(PacijentPregledSlog), 1, fp);
                 counter++;

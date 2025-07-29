@@ -9,6 +9,9 @@ typedef struct {
     char JMBG[14];
     float tezina;
     float visina;
+    float suma_sistolni;
+    float suma_dijastolni;
+    ;
     float prosecan_sistolni;
     float prosecan_dijastolni;
     int br_pregleda;

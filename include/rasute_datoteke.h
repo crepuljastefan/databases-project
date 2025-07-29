@@ -19,6 +19,8 @@ void upisi_slog_rasuta(PacijentPregledSlog* slog, int* counter, const char* file
 int nadji_slobodan_index(FILE* fp, int* counter, int broj_kartona);
 int is_prekoracilac(int index, PacijentPregledSlog slog);
 void prikazi_tri_pregleda(const char filename[], int* status);
-void propagiraj_pacijenta_u_rasutu(Pacijent pacijent, const char rasuta_datoteka[], const char operacija[], int* status);
+void prikazi_prosecan_pritisak(const char filename[], int broj_kartona, int* status);
+void propagiraj_pacijenta_u_rasutu(PacijentSlog pacijentSlog, const char rasuta_datoteka[], const char operacija[], int* status);
 void propagiraj_pregled_u_rasutu(const char rasuta_datoteka[], PregledSlog pregled_slog, int* status);
+void logicki_obrisi_slog(const char filename[], int broj_kartona, int* status);
 #endif // RASUTE_DATOTEKE_H

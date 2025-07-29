@@ -29,25 +29,26 @@ void meni()
         printf("Unesite izbor: ");
         scanf("%d", &izbor);
 
-        char pregledi_filename[100];
-        char pacijenti_filename[100];
         Pacijent pacijent;
         PacijentSlog pacijent_slog;
         Pregled pregled;
         PregledSlog pregled_slog;
+        char unos[100];
         PacijentPregledSlog pacijent_pregled_slog;
         switch (izbor) {
         case 1:
             printf("Unesite ime datoteke: ");
-            scanf("%s", pacijenti_filename);
+            scanf("%s", unos);
+            set_pacijenti_file(unos);
             formiraj_datoteku_pacijent(pacijenti_filename, f1, &status);
             printf("Formirana je datoteka pacijenata.\n");
             break;
         case 2:
             printf("Unesite ime datoteke: ");
-            scanf("%s", pregledi_filename);
+            scanf("%s", unos);
+            set_pregledi_file(unos);
             formiraj_datoteku_pregled(pregledi_filename, f2, &status);
-            printf("Formirana je datoteka pacijenata.\n");
+            printf("Formirana je datoteka pregleda.\n");
             break;
         case 3:
             // printf("Unesite ime datoteke: ");
@@ -78,6 +79,7 @@ void meni()
         case 4:
             // printf("Unesite ime datoteke: ");
             // scanf("%s", filename);
+            printf("%s", pregledi_filename);
             printf("Popunite podatke pregleda:\n");
             printf("ID pregleda:\n");
             scanf("%d", &pregled.id);
@@ -98,10 +100,10 @@ void meni()
             printf("Unesite broj kartona pacijenta: ");
             int broj_kartona;
             scanf("%d", &broj_kartona);
-            prikazi_alergije(broj_kartona);
+            prikazi_alergije(pacijenti_filename, broj_kartona);
             break;
         case 6:
-            prikaz_pritiska();
+            prikaz_pritiska(pregledi_filename);
             break;
         case 7:
             printf("Unesite broj kartona pacijenta kojeg zelite da modifikujete: ");
@@ -121,7 +123,7 @@ void meni()
             printf("Unesite novu alergiju na polen (da/ne): ");
             scanf("%s", pacijent.alerg_polen);
 
-            modifikuj_pacijenta(pacijent.broj_kartona, pacijent.ime, pacijent.prezime, pacijent.JMBG, pacijent.datum_rodjenja, pacijent.tezina, pacijent.visina, pacijent.alerg_polen);
+            modifikuj_pacijenta(pacijenti_filename, pacijent.broj_kartona, pacijent.ime, pacijent.prezime, pacijent.JMBG, pacijent.datum_rodjenja, pacijent.tezina, pacijent.visina, pacijent.alerg_polen);
             break;
         case 8:
             meni_rasute();
